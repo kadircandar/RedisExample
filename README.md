@@ -11,5 +11,6 @@ Redis üzerinde **string**, **object (JSON)** ve **hash** veri tipleriyle CRUD i
 - ✔ **String Key-Value CRUD**
 - ✔ **Object (JSON) Cacheleme**
 - ✔ **Hash Veri Tipi Desteği**
+- ✔ **Sorted Set (Liderlik Tablosu) Desteği**
 - ✔ **Pattern bazlı silme** (`user:*` gibi)
 - ✔ **Dependency Injection** uyumlu yapı
