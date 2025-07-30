@@ -112,5 +112,43 @@ app.MapGet("/hash/all/{key}", async (string key, RedisHelper redis) =>
 .WithName("GetAllHashFields");
 
 
+app.MapPost("/leaderboard/{player}/{score}", async (string player, double score, RedisHelper redis) =>
+{
+    await redis.AddOrUpdatePlayerAsync(player, score);
+    return Results.Ok(new { Message = $"{player}'s score has been updated to {score}." });
+})
+.WithName("AddOrUpdatePlayer");
+
+
+app.MapGet("/leaderboard", async (RedisHelper redis) =>
+{
+    var players = await redis.GetAllAsync();
+    var response = players.Select((p, index) => new PlayerInfo(p.Player, p.Score, index + 1));
+    return Results.Ok(response);
+})
+.WithName("GetAllPlayers");
+
+
+app.MapGet("/leaderboard/{player}", async (string player, RedisHelper redis) =>
+{
+    var (score, rank) = await redis.GetPlayerAsync(player);
+    if (score.HasValue && rank.HasValue)
+    {
+        return Results.Ok(new PlayerInfo(player, score.Value, rank));
+    }
+    return Results.NotFound(new { Message = "Player not found." });
+})
+.WithName("GetPlayer");
+
+
+app.MapGet("/leaderboard/top/{count:int}", async (int count, RedisHelper redis) =>
+{
+    var players = await redis.GetTopAsync(count);
+    var response = players.Select((p, index) => new PlayerInfo(p.Player, p.Score, index + 1));
+    return Results.Ok(response);
+})
+.WithName("GetTopPlayers");
+
+
 
 app.Run();

@@ -8,6 +8,7 @@ namespace RedisExample
         private readonly ConnectionMultiplexer _redis;
         private readonly IDatabase _db;
         private readonly IServer _server;
+        private readonly string _leaderboardKey = "game:leaderboard";
 
         public RedisHelper(string connectionString)
         {
@@ -90,6 +91,35 @@ namespace RedisExample
 
         public async Task<bool> HashFieldExistsAsync(string key, string field)
             => await _db.HashExistsAsync(key, field);
+
+
+        // -------------------- SORTED SET --------------------
+        public async Task AddOrUpdatePlayerAsync(string player, double score)
+        {
+            await _db.SortedSetAddAsync(_leaderboardKey, player, score);
+        }
+
+
+        public async Task<IEnumerable<(string Player, double Score)>> GetAllAsync()
+        {
+            var result = await _db.SortedSetRangeByRankWithScoresAsync(_leaderboardKey, 0, -1, Order.Descending);
+            return result.Select(x => (x.Element.ToString(), x.Score));
+        }
+
+
+        public async Task<(double? Score, long? Rank)> GetPlayerAsync(string player)
+        {
+            var score = await _db.SortedSetScoreAsync(_leaderboardKey, player);
+            var rank = await _db.SortedSetRankAsync(_leaderboardKey, player, Order.Descending);
+            return (score, rank.HasValue ? rank.Value + 1 : null);
+        }
+
+
+        public async Task<IEnumerable<(string Player, double Score)>> GetTopAsync(int count)
+        {
+            var result = await _db.SortedSetRangeByRankWithScoresAsync(_leaderboardKey, 0, count - 1, Order.Descending);
+            return result.Select(x => (x.Element.ToString(), x.Score));
+        }
 
     }
 }
